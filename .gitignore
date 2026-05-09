@@ -1,0 +1,36 @@
+node_modules/
+dist/
+release/
+*.log
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build output
+*.dmg
+*.exe
+*.nsis
+*.blockmap
+
+# Claude Code
+.claude/
+
+# Workbuddy
+.workbuddy/
+
+# HAR files (may contain sensitive data)
+*.har
+
+# Temporary files
+*.tmp
+*.temp

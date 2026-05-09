@@ -1,0 +1,329 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  background: #f4f6f8;
+  color: #1f2937;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+.app-shell {
+  min-height: 100vh;
+  background: #f4f6f8;
+}
+
+.app-sidebar {
+  position: relative;
+  border-right: 1px solid #e5e7eb;
+  box-shadow: 1px 0 0 rgba(15, 23, 42, 0.02);
+}
+
+.app-brand {
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border-bottom: 1px solid #edf0f3;
+}
+
+.app-brand-icon {
+  font-size: 24px;
+  color: #1677ff;
+}
+
+.app-brand-title {
+  max-width: 168px;
+  font-size: 15px;
+  font-weight: 650;
+  color: #111827;
+  line-height: 1.25;
+}
+
+.app-user-panel {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 12px 16px;
+  border-top: 1px solid #edf0f3;
+  background: #fff;
+}
+
+.app-user-row,
+.app-logout {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.app-user-row {
+  margin-bottom: 8px;
+  color: #374151;
+}
+
+.app-user-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+}
+
+.app-logout {
+  cursor: pointer;
+  color: #ff4d4f;
+  font-size: 13px;
+  padding: 4px 0;
+}
+
+.app-content {
+  padding: 24px;
+  overflow: auto;
+}
+
+.app-content-panel {
+  max-width: 1280px;
+  min-height: calc(100vh - 48px);
+  margin: 0 auto;
+  padding: 24px;
+  background: #fff;
+  border: 1px solid #edf0f3;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.page-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.two-column-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(360px, 0.85fr);
+  gap: 16px;
+}
+
+/* 自定义滚动条 */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #d9d9d9;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #bfbfbf;
+}
+
+/* 文件拖拽区域 */
+.file-drop-zone {
+  border: 2px dashed #d9d9d9;
+  border-radius: 8px;
+  padding: 40px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s;
+  background: #fafafa;
+}
+
+.file-drop-zone:hover,
+.file-drop-zone.drag-over {
+  border-color: #1677ff;
+  background: #e6f4ff;
+}
+
+/* 步骤指示器 */
+.step-content {
+  padding: 24px;
+  min-height: 500px;
+}
+
+/* 上传进度卡片 */
+.upload-card {
+  margin-bottom: 12px;
+  border-radius: 8px;
+}
+
+.upload-card .ant-card-body {
+  padding: 12px 16px;
+}
+
+/* 播客选择卡片 */
+.podcast-card {
+  cursor: pointer;
+  transition: all 0.3s;
+  border: 2px solid transparent;
+}
+
+.podcast-card:hover {
+  border-color: #1677ff;
+  box-shadow: 0 2px 8px rgba(22, 119, 255, 0.15);
+}
+
+.podcast-card.selected {
+  border-color: #1677ff;
+  background: #e6f4ff;
+}
+
+/* 编辑器 */
+.editor-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+@media (max-width: 768px) {
+  .editor-container {
+    grid-template-columns: 1fr;
+  }
+}
+
+.llm-input-area textarea {
+  min-height: 120px;
+  font-size: 14px;
+}
+
+/* 登录页面 */
+.login-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  gap: 24px;
+}
+
+.qr-code-wrapper {
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  text-align: center;
+}
+
+/* 设置页面 */
+.settings-card {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.music-partner-page {
+  max-width: 1080px;
+}
+
+.music-partner-console {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+
+.music-partner-status {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
+.music-partner-window-card .ant-card-body {
+  display: grid;
+  grid-template-columns: 180px minmax(0, 1fr);
+  gap: 24px;
+  align-items: center;
+}
+
+.music-partner-phone-preview {
+  width: 156px;
+  height: 248px;
+  padding: 10px;
+  background: #111827;
+  border-radius: 24px;
+  box-shadow: 0 14px 34px rgba(15, 23, 42, 0.18);
+}
+
+.music-partner-phone-speaker {
+  width: 44px;
+  height: 5px;
+  margin: 0 auto 10px;
+  background: #374151;
+  border-radius: 99px;
+}
+
+.music-partner-phone-screen-preview {
+  height: 212px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: #f8fafc;
+  border-radius: 14px;
+  text-align: center;
+}
+
+.music-partner-phone-screen-preview .anticon {
+  font-size: 34px;
+  color: #1677ff;
+}
+
+.music-partner-window-copy {
+  min-width: 0;
+}
+
+@media (max-width: 960px) {
+  .app-content {
+    padding: 16px;
+  }
+
+  .app-content-panel {
+    min-height: calc(100vh - 32px);
+    padding: 18px;
+  }
+
+  .page-header,
+  .music-partner-status {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .page-header-actions {
+    justify-content: flex-start;
+  }
+
+  .two-column-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .music-partner-window-card .ant-card-body {
+    grid-template-columns: 1fr;
+  }
+
+  .music-partner-phone-preview {
+    justify-self: center;
+  }
+}
