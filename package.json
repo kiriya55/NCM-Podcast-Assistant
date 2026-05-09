@@ -1,0 +1,60 @@
+{
+  "name": "NCM-Podcast-Assistant",
+  "version": "1.0.0",
+  "description": "NCM-Podcast-Assistant — 网易云播客投稿助手，批量上传、AI 智能填写、封面管理",
+  "main": "electron/main.js",
+  "author": "kiriya55",
+  "license": "MIT",
+  "scripts": {
+    "dev": "concurrently \"vite\" \"wait-on http://localhost:5173 && electron .\"",
+    "build": "vite build && electron-builder",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@ant-design/icons": "^5.5.0",
+    "antd": "^5.22.0",
+    "electron-store": "^8.2.0",
+    "node-fetch": "^2.7.0",
+    "openai": "^4.70.0",
+    "qrcode": "^1.5.4",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.4",
+    "concurrently": "^9.1.0",
+    "electron": "^41.5.0",
+    "electron-builder": "^25.1.8",
+    "playwright": "^1.59.1",
+    "vite": "^5.4.11",
+    "wait-on": "^8.0.1"
+  },
+  "build": {
+    "appId": "com.netease-kiriya55.podcast-uploader",
+    "productName": "网易云播客投稿助手",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "package.json",
+      "index.html"
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "build/icon.ico",
+      "signAndEditExecutable": false
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "installerIcon": "build/icon.ico",
+      "uninstallerIcon": "build/icon.ico"
+    },
+    "asar": true
+  }
+}
