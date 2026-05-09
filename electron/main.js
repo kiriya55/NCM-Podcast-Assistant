@@ -51,7 +51,7 @@ function createWindow() {
     mainWindow.loadURL('http://localhost:5173').catch(() => {
       mainWindow.loadFile(distFile).catch(() => {
         mainWindow.loadURL('data:text/html;charset=utf-8,' + encodeURIComponent(
-          '<html><body style="font-family:sans-serif;display:flex;justify-content:center;align-items:center;height:100vh;background:#f5f5f5"><div style="text-align:center"><h2>寮€鍙戞湇鍔″櫒鏈惎鍔?/h2><p>璇峰厛杩愯 <code style="background:#eee;padding:4px 8px;border-radius:4px">npm run dev</code></p><p style="color:#999;font-size:13px">鎴栧厛鎵ц <code style="background:#eee;padding:4px 8px;border-radius:4px">npm run build</code> 鍐嶈繍琛?<code style="background:#eee;padding:4px 8px;border-radius:4px">electron .</code></p></div></body></html>'
+          '<html><body style="font-family:sans-serif;display:flex;justify-content:center;align-items:center;height:100vh;background:#f5f5f5"><div style="text-align:center"><h2>开发服务器未启动</h2><p>请先运行 <code style="background:#eee;padding:4px 8px;border-radius:4px">npm run dev</code></p><p style="color:#999;font-size:13px">或先执行 <code style="background:#eee;padding:4px 8px;border-radius:4px">npm run build</code> 再运行 <code style="background:#eee;padding:4px 8px;border-radius:4px">electron .</code></p></div></body></html>'
         ))
       })
     })
@@ -60,7 +60,7 @@ function createWindow() {
         console.log('[Main] Dev server unavailable, loading dist')
         mainWindow.loadFile(distFile).catch(() => {
           mainWindow.loadURL('data:text/html;charset=utf-8,' + encodeURIComponent(
-            '<html><body style="font-family:sans-serif;display:flex;justify-content:center;align-items:center;height:100vh;background:#f5f5f5"><div style="text-align:center"><h2>寮€鍙戞湇鍔″櫒鏈惎鍔?/h2><p>璇峰厛杩愯 <code style="background:#eee;padding:4px 8px;border-radius:4px">npm run dev</code></p></div></body></html>'
+            '<html><body style="font-family:sans-serif;display:flex;justify-content:center;align-items:center;height:100vh;background:#f5f5f5"><div style="text-align:center"><h2>开发服务器未启动</h2><p>请先运行 <code style="background:#eee;padding:4px 8px;border-radius:4px">npm run dev</code></p></div></body></html>'
           ))
         })
       }
@@ -186,7 +186,7 @@ function registerIpcHandlers() {
     const result = await dialog.showOpenDialog(mainWindow, {
       properties: ['openFile', 'multiSelections'],
       filters: [
-        { name: '闊抽鏂囦欢', extensions: ['mp3', 'wav', 'm4a', 'aac', 'ogg', 'flac'] },
+        { name: '音频文件', extensions: ['mp3', 'wav', 'm4a', 'aac', 'ogg', 'flac'] },
       ],
     })
     if (result.canceled) return []
@@ -197,7 +197,7 @@ function registerIpcHandlers() {
     const result = await dialog.showOpenDialog(mainWindow, {
       properties: ['openFile', 'multiSelections'],
       filters: [
-        { name: '鍥剧墖鏂囦欢', extensions: ['jpg', 'jpeg', 'png', 'webp'] },
+        { name: '图片文件', extensions: ['jpg', 'jpeg', 'png', 'webp'] },
       ],
     })
     if (result.canceled) return []
@@ -220,12 +220,12 @@ function registerIpcHandlers() {
   ipcMain.handle('download-image', async (event, url, defaultFilename) => {
     const result = await dialog.showSaveDialog(mainWindow, {
       defaultPath: defaultFilename || 'cover.jpg',
-      filters: [{ name: '鍥剧墖鏂囦欢', extensions: ['jpg', 'jpeg', 'png', 'webp'] }],
+      filters: [{ name: '图片文件', extensions: ['jpg', 'jpeg', 'png', 'webp'] }],
     })
     if (result.canceled) return { success: false }
 
     const res = await fetch(url)
-    if (!res.ok) throw new Error('涓嬭浇澶辫触: HTTP ' + res.status)
+    if (!res.ok) throw new Error('下载失败: HTTP ' + res.status)
     const buffer = Buffer.from(await res.arrayBuffer())
     require('fs').writeFileSync(result.filePath, buffer)
     return { success: true, path: result.filePath }
@@ -308,10 +308,10 @@ function registerIpcHandlers() {
 
   ipcMain.handle('upload-cover', async (event, imageBufferBase64, fileName) => {
     try {
-      // 浠?data URI 涓彁鍙?MIME 绫诲瀷
+      // 从 data URI 中提取 MIME 类型
       const mimeMatch = imageBufferBase64.match(/^data:([^;]+);base64,/)
       const mime = mimeMatch ? mimeMatch[1] : 'image/jpeg'
-      // 灏?base64 杞洖 Buffer
+      // 将 base64 转回 Buffer
       const base64Data = imageBufferBase64.replace(/^data:[^;]+;base64,/, '')
       const buffer = Buffer.from(base64Data, 'base64')
       return await podcastService.uploadCoverImage(buffer, fileName, mime)
@@ -351,7 +351,7 @@ function registerIpcHandlers() {
       await createMusicPartnerWindow()
       return { success: true }
     } catch (err) {
-      console.error('[MusicPartner] 鎵撳紑澶辫触:', err)
+      console.error('[MusicPartner] 打开失败:', err)
       throw err
     }
   })
@@ -488,14 +488,14 @@ async function prepareMusicPartnerEmbedConfig() {
   }
 }
 
-// 创建音乐合伙人H5窗口
+// 创建音乐合伙人 H5 窗口
 async function createMusicPartnerWindow() {
   if (musicPartnerWindow && !musicPartnerWindow.isDestroyed()) {
     musicPartnerWindow.focus()
     return
   }
 
-  // === 绗竴姝ワ細鍏堢敓鎴愬苟鍐欏ソ preload 鏂囦欢锛屽啀鍒涘缓 BrowserWindow ===
+  // === 第一步：先生成并写好 preload 文件，再创建 BrowserWindow ===
   const nickname = (cookieStore.getNickname() || '').replace(/'/g, "\\'").replace(/\\/g, '\\\\')
   const userId = cookieStore.getUserId() || ''
   const bridgePreloadPath = path.join(app.getPath('temp'), 'music-partner-bridge-preload.js')
@@ -505,7 +505,7 @@ async function createMusicPartnerWindow() {
   require('fs').writeFileSync(bridgePreloadPath, bridgeScript, 'utf-8')
   console.log('[MusicPartner] Bridge preload written:', bridgePreloadPath)
 
-  // === 绗簩姝ワ細鍒涘缓绐楀彛锛屾鏃?preload 鏂囦欢宸插瓨鍦?===
+  // === 第二步：创建窗口，此时 preload 文件已存在 ===
   musicPartnerWindow = new BrowserWindow({
     width: 400,
     height: 750,
@@ -532,7 +532,7 @@ async function createMusicPartnerWindow() {
     }
   )
 
-  // 璁剧疆 Referer 鍜?User-Agent 澶撮儴
+  // 设置 Referer 和 User-Agent 头部
   partnerSession.webRequest.onBeforeSendHeaders(
     { urls: ['https://*.music.163.com/*', 'https://*.127.net/*', 'https://*.music.126.net/*'] },
     (details, callback) => {
@@ -559,7 +559,7 @@ async function createMusicPartnerWindow() {
     }
   )
 
-  // === 绗笁姝ワ細娉ㄥ叆 Cookie 瀹炵幇鐧诲綍鎬佸叡浜?===
+  // === 第三步：注入 Cookie 实现登录态共享 ===
   try {
     const cookies = {
       ...cookieStore.getCookies(),
@@ -589,14 +589,14 @@ async function createMusicPartnerWindow() {
 
     console.log('[MusicPartner] Cookie injection completed, count:', cookieEntries.length)
   } catch (err) {
-    console.error('[MusicPartner] Cookie娉ㄥ叆澶辫触:', err)
+    console.error('[MusicPartner] Cookie 注入失败:', err)
   }
 
-  // 鐩戝惉娓叉煋杩涚▼鏃ュ織锛堟墦鍗版墍鏈夋棩蹇椾究浜庤瘖鏂紝杩囨护鎺夊櫔闊崇骇鍒級
+  // 监听渲染进程日志（打印所有日志便于诊断，过滤掉噪音级别）
   musicPartnerWindow.webContents.on('console-message', (_e, level, msg) => {
     // level: 0=verbose, 1=info, 2=warning, 3=error
     if (level >= 2) {
-      // warning/error 鍏ㄩ儴鎵撳嵃
+      // warning/error 全部打印
       console.log('[Renderer:' + (level === 3 ? 'ERR' : 'WRN') + ']', msg.substring(0, 500))
     } else if (msg.indexOf('[BridgeMock]') !== -1 || msg.indexOf('MNB') !== -1) {
       console.log('[Renderer]', msg.substring(0, 500))

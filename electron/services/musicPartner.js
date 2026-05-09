@@ -86,7 +86,7 @@ class MusicPartnerService {
     return res.data
   }
 
-  async submitScore(taskId, work, score, isExtra = false) {
+  async submitScore(taskId, work, score, isExtra = false, comment = '', share = true) {
     const tag = `${score}-A-1`
     const data = {
       taskId,
@@ -94,8 +94,9 @@ class MusicPartnerService {
       score: String(score),
       tags: tag,
       customTags: '%5B%5D',
-      comment: '',
-      syncYunCircle: 'true',
+      comment: comment || '',
+      syncYunCircle: String(share),
+      source: 'mp-music-partner',
     }
     if (isExtra) {
       data.extraResource = 'true'
@@ -105,7 +106,8 @@ class MusicPartnerService {
     const res = await this._postEncrypted(path, data)
 
     if (res.code === 200) {
-      return { success: true }
+      const todayRemain = res.data && res.data.todayRemainCommentScore
+      return { success: true, todayRemainCommentScore: todayRemain }
     }
 
     const errorMsg = res.message || res.msg || '未知错误'
@@ -113,6 +115,15 @@ class MusicPartnerService {
       return { success: false, skipped: true, message: '资源状态异常，已跳过' }
     }
     throw new Error(`评分失败: ${errorMsg} (${res.code})`)
+  }
+
+  async checkText(content) {
+    const path = '/eapi/music/partner/custom/content/antispam'
+    const res = await this._postEncrypted(path, { content })
+    if (res.code === 200) {
+      return { success: true, data: res.data }
+    }
+    return { success: false, message: res.message || res.msg || '内容审核失败' }
   }
 
   async reportListen(work) {
@@ -183,13 +194,14 @@ class MusicPartnerService {
 
       try {
         const score = this._calcScore(work, scoreStrategy)
-        await this.submitScore(taskId, work, score, false)
+        const submitResult = await this.submitScore(taskId, work, score, false)
         results.daily.completed++
         results.daily.items.push({
           name: work.name,
           author: work.authorName,
           status: 'done',
           score,
+          todayRemainCommentScore: submitResult.todayRemainCommentScore,
         })
       } catch (err) {
         if (err.message.includes('资源状态异常')) {
@@ -254,13 +266,14 @@ class MusicPartnerService {
           await this._sleep(this._getRandomDelay(1, 3))
 
           const score = this._calcScore(work, scoreStrategy)
-          await this.submitScore(taskId, work, score, true)
+          const submitResult = await this.submitScore(taskId, work, score, true)
           results.extra.completed++
           results.extra.items.push({
             name: work.name,
             author: work.authorName,
             status: 'done',
             score,
+            todayRemainCommentScore: submitResult.todayRemainCommentScore,
           })
         } catch (err) {
           results.extra.failed++

@@ -1,10 +1,14 @@
-# NCM-Podcast-Assistant（网易云播客投稿助手）
-
+<p align="center">
+<img src="https://github.com/kiriya55/NCM-Podcast-Assistant/blob/main/build/icon.png" alt="NCM-Podcast-Assistant Icon" width="128">
+  <h1 align="center">网易云播客投稿助手</h1>
+  <p align="center">
+    通过GUI管理网易云播客&电脑完成音乐合伙人任务！
+    <br />
+  </p>
+</p>
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 基于 Electron + React 的桌面端工具，用于向网易云音乐播客批量上传和管理音频单集。
-
-> GitHub: [kiriya55/NCM-Podcast-Assistant](https://github.com/kiriya55/NCM-Podcast-Assistant)
 
 ## 功能特性
 
@@ -95,7 +99,7 @@ npm run build
 
 左侧菜单选择「音乐合伙人」：
 
-- **自动打开H5 页面** — 可在PC端完成每日歌曲任务和评分
+- **可在电脑端模拟小窗口设备打开H5 页面** — 跨平台完成每日歌曲任务、点击喜欢和评分（目前版本为避免风险操作，禁用了歌曲推荐的相关功能）
 
 ### 6. 设置
 
@@ -163,6 +167,10 @@ npm run build
 ## 免责声明
 
 本项目仅供学习和研究用途。使用本工具时请遵守网易云音乐的服务条款。作者不对因使用本工具而产生的任何问题负责。
+
+# 致谢
+
+本项目大量使用了[NCMApiEnhanced相关项目](https://github.com/NeteaseCloudMusicApiEnhanced/api-enhanced)提供的API作为参考，在此致谢。
 
 ## License
 

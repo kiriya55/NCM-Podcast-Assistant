@@ -1,13 +1,13 @@
 function createMusicPartnerBridgeScript({ nickname = '', userId = '' } = {}) {
   return `
     (function() {
-      var BRIDGE_VERSION = 'audio-v5-20260508';
+      var BRIDGE_VERSION = 'audio-v6-20260509';
       if (window.__bridgeMockVersion === BRIDGE_VERSION) return;
       window.__bridgeMockInjected = true;
       window.__bridgeMockVersion = BRIDGE_VERSION;
       console.log('[BridgeMock] installed version:', BRIDGE_VERSION);
 
-      // 鍦?preload 涓婁笅鏂囷紙contextIsolation=false锛変腑锛宺equire('electron') 鍙敤
+      // 在 preload 上下文（contextIsolation=false）中，require('electron') 可用
       var _electron = null;
       try { _electron = require('electron'); } catch(e) {}
       var _audioState = {
@@ -328,6 +328,23 @@ function createMusicPartnerBridgeScript({ nickname = '', userId = '' } = {}) {
                   if (pathForProxy.indexOf('/song/enhance/player/url') !== -1) {
                     setAudioSource(findAudioUrl(respData));
                   }
+
+                  // 屏蔽推荐任务：把 recResources 全部标记为不可互动
+                  if (respData && respData.data && Array.isArray(respData.data.recResources)) {
+                    respData.data.recResources = respData.data.recResources.map(function(r) {
+                      return Object.assign({}, r, { canInteract: false });
+                    });
+                  }
+
+                  // 屏蔽推荐任务互动上报（发动态、发评论、收藏歌单）
+                  if (pathForProxy.indexOf('/resource/interact/report') !== -1 && reqData) {
+                    var _itype = reqData.interactType || reqData.interacttype || '';
+                    if (_itype === 'PUBLISH_EVENT' || _itype === 'PUBLISH_COMMENT' || _itype === 'COLLECT_PLAYLIST') {
+                      console.log('[BridgeMock] blocked rec task interact:', _itype);
+                      respData = { code: 200, data: { interactResult: true } };
+                    }
+                  }
+
                   // Log non-200 API codes for diagnosis.
                   if (respData && typeof respData === 'object' && respData.code && respData.code !== 200) {
                     console.warn('[BridgeMock] API responded with code:', respData.code, reqPath, respData.message || '');
@@ -350,7 +367,7 @@ function createMusicPartnerBridgeScript({ nickname = '', userId = '' } = {}) {
               }
             }
           }
-          // nm.play.* 鎾斁鍣ㄧ浉鍏?鈥?H5 鎾斁鍣ㄦ帶鍒讹紝闇€瑕佽繑鍥炴湁鏁堝搷搴旇鐘舵€佹満鎺ㄨ繘
+          // 播放器相关 — H5 播放器控制，返回有效响应让状态机推进
           // playHtmlAudio — mission page calls this when in NEM app
           // The page has its own <audio> element (Lt.tracks.song.audioNode) that drives the UI.
           // We must play THAT element so its events update the UI.
@@ -648,7 +665,7 @@ function createMusicPartnerBridgeScript({ nickname = '', userId = '' } = {}) {
                 || method.indexOf('mp.') === 0) {
             result.context = {};
           }
-          // 閫氱敤 nm.* 鏈煡鏂规硶鍏滃簳
+          // 通用 nm.* 未知方法兜底
           else if (method.indexOf('nm.') === 0) {
             console.log('[BridgeMock] nm.* unhandled:', method, JSON.stringify(params).substring(0, 100));
             result.context = { code: 200, data: {} };
@@ -660,7 +677,7 @@ function createMusicPartnerBridgeScript({ nickname = '', userId = '' } = {}) {
 
           var response = JSON.stringify(result);
 
-          // MNBCallback 鏈熸湜 4 涓嫭绔嬪弬鏁? (seq, error, result, options)
+          // MNBCallback 期望 4 个独立参数 (seq, error, result, options)
           if (!handledAsync && window.MNBCallback && seq !== undefined) {
             console.log('[BridgeMock] calling MNBCallback seq:', seq, 'method:', method);
             (function(seqNum, err, res) {
