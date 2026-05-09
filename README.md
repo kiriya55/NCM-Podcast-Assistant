@@ -6,7 +6,7 @@
     <br />
   </p>
 </p>
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+<a href='LICENSE'><img src="https://img.shields.io/badge/license-MIT-yellow.svg" alt="MIT License"></a>
 
 基于 Electron + React 的桌面端工具，用于向网易云音乐播客批量上传和管理音频单集。
 
@@ -18,7 +18,7 @@
 - **AI 智能填写** — 集成 OpenAI 兼容 API，从自然语言描述提取结构化歌曲信息
 - **封面管理** — 从音频提取封面、设置统一封面、单独修改封面
 - **播客管理** — 编辑单集信息、删除单集、设置隐私
-- **音乐合伙人** — H5 页面电脑端实现
+- **音乐合伙人** — H5 页面电脑端实现（仅含歌曲评定）
 
 ## 环境要求
 
@@ -99,7 +99,7 @@ npm run build
 
 左侧菜单选择「音乐合伙人」：
 
-- **可在电脑端模拟小窗口设备打开H5 页面** — 跨平台完成每日歌曲任务、点击喜欢和评分（目前版本为避免风险操作，禁用了歌曲推荐的相关功能）
+- **可在电脑端模拟小窗口设备打开H5 页面** — 跨平台完成每日歌曲评定、撰写乐评和点击喜欢（目前版本为避免风险操作，禁用了歌曲推荐的相关功能）
 
 ### 6. 设置
 
