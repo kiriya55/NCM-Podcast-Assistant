@@ -28,9 +28,25 @@ Thumbs.db
 # Workbuddy
 .workbuddy/
 
+# Agent/tool runtime directories
+.omo/
+.agents/
+.codegraph/
+.superpowers/
+docs/superpowers/
+
+# Local Git worktrees
+.worktrees/
+
 # HAR files (may contain sensitive data)
 *.har
 
 # Temporary files
 *.tmp
 *.temp
+
+# Tests
+test/
+
+# Docs
+DESIGN.md

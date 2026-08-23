@@ -1,3 +1,36 @@
+:root {
+  /* Color tokens — see DESIGN.md */
+  --canvas: #f4f6f8;
+  --surface: #ffffff;
+  --surface-muted: #fafafa;
+  --border: #edf0f3;
+  --border-strong: #e5e7eb;
+  --text: #111827;
+  --text-muted: #374151;
+  --text-tertiary: #6b7280;
+  --action: #1677ff;
+  --action-bg: #e6f4ff;
+  --success: #52c41a;
+  --warning: #faad14;
+  --danger: #ff4d4f;
+  --ink-strong: #111827;
+  --ink-mid: #374151;
+
+  /* Radius */
+  --radius-control: 6px;
+  --radius-card: 8px;
+  --radius-surface: 12px;
+  --radius-phone-screen: 14px;
+  --radius-phone-shell: 24px;
+  --radius-pill: 99px;
+
+  /* Shadows */
+  --shadow-panel: 0 8px 24px rgba(15, 23, 42, 0.04);
+  --shadow-soft: 0 2px 12px rgba(0, 0, 0, 0.08);
+  --shadow-action: 0 2px 8px rgba(22, 119, 255, 0.15);
+  --shadow-phone: 0 14px 34px rgba(15, 23, 42, 0.18);
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -6,8 +39,8 @@
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  background: #f4f6f8;
-  color: #1f2937;
+  background: var(--canvas);
+  color: var(--text);
 }
 
 #root {
@@ -16,12 +49,12 @@ body {
 
 .app-shell {
   min-height: 100vh;
-  background: #f4f6f8;
+  background: var(--canvas);
 }
 
 .app-sidebar {
   position: relative;
-  border-right: 1px solid #e5e7eb;
+  border-right: 1px solid var(--border-strong);
   box-shadow: 1px 0 0 rgba(15, 23, 42, 0.02);
 }
 
@@ -36,14 +69,14 @@ body {
 
 .app-brand-icon {
   font-size: 24px;
-  color: #1677ff;
+  color: var(--action);
 }
 
 .app-brand-title {
   max-width: 168px;
   font-size: 15px;
   font-weight: 650;
-  color: #111827;
+  color: var(--text);
   line-height: 1.25;
 }
 
@@ -53,8 +86,8 @@ body {
   left: 0;
   right: 0;
   padding: 12px 16px;
-  border-top: 1px solid #edf0f3;
-  background: #fff;
+  border-top: 1px solid var(--border);
+  background: var(--surface);
 }
 
 .app-user-row,
@@ -66,7 +99,7 @@ body {
 
 .app-user-row {
   margin-bottom: 8px;
-  color: #374151;
+  color: var(--text-muted);
 }
 
 .app-user-name {
@@ -80,7 +113,7 @@ body {
 
 .app-logout {
   cursor: pointer;
-  color: #ff4d4f;
+  color: var(--danger);
   font-size: 13px;
   padding: 4px 0;
 }
@@ -95,10 +128,10 @@ body {
   min-height: calc(100vh - 48px);
   margin: 0 auto;
   padding: 24px;
-  background: #fff;
-  border: 1px solid #edf0f3;
-  border-radius: 8px;
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-panel);
 }
 
 .page-header {
@@ -144,18 +177,18 @@ body {
 /* 文件拖拽区域 */
 .file-drop-zone {
   border: 2px dashed #d9d9d9;
-  border-radius: 8px;
+  border-radius: var(--radius-card);
   padding: 40px;
   text-align: center;
   cursor: pointer;
   transition: all 0.3s;
-  background: #fafafa;
+  background: var(--surface-muted);
 }
 
 .file-drop-zone:hover,
 .file-drop-zone.drag-over {
-  border-color: #1677ff;
-  background: #e6f4ff;
+  border-color: var(--action);
+  background: var(--action-bg);
 }
 
 /* 步骤指示器 */
@@ -167,7 +200,7 @@ body {
 /* 上传进度卡片 */
 .upload-card {
   margin-bottom: 12px;
-  border-radius: 8px;
+  border-radius: var(--radius-card);
 }
 
 .upload-card .ant-card-body {
@@ -182,13 +215,13 @@ body {
 }
 
 .podcast-card:hover {
-  border-color: #1677ff;
-  box-shadow: 0 2px 8px rgba(22, 119, 255, 0.15);
+  border-color: var(--action);
+  box-shadow: var(--shadow-action);
 }
 
 .podcast-card.selected {
-  border-color: #1677ff;
-  background: #e6f4ff;
+  border-color: var(--action);
+  background: var(--action-bg);
 }
 
 /* 编辑器 */
@@ -220,10 +253,10 @@ body {
 }
 
 .qr-code-wrapper {
-  background: white;
+  background: var(--surface);
   padding: 20px;
-  border-radius: 12px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  border-radius: var(--radius-surface);
+  box-shadow: var(--shadow-soft);
   text-align: center;
 }
 
@@ -261,17 +294,17 @@ body {
   width: 156px;
   height: 248px;
   padding: 10px;
-  background: #111827;
-  border-radius: 24px;
-  box-shadow: 0 14px 34px rgba(15, 23, 42, 0.18);
+  background: var(--ink-strong);
+  border-radius: var(--radius-phone-shell);
+  box-shadow: var(--shadow-phone);
 }
 
 .music-partner-phone-speaker {
   width: 44px;
   height: 5px;
   margin: 0 auto 10px;
-  background: #374151;
-  border-radius: 99px;
+  background: var(--ink-mid);
+  border-radius: var(--radius-pill);
 }
 
 .music-partner-phone-screen-preview {
@@ -282,17 +315,91 @@ body {
   justify-content: center;
   gap: 8px;
   background: #f8fafc;
-  border-radius: 14px;
+  border-radius: var(--radius-phone-screen);
   text-align: center;
 }
 
 .music-partner-phone-screen-preview .anticon {
   font-size: 34px;
-  color: #1677ff;
+  color: var(--action);
 }
 
 .music-partner-window-copy {
   min-width: 0;
+}
+
+/* === 自动评定控制台 === */
+.music-partner-auto-card .ant-card-body {
+  display: block;
+}
+
+.music-partner-auto-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.music-partner-auto-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.music-partner-auto-progress-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 12px 0 4px;
+}
+
+.music-partner-auto-progress-row .ant-progress {
+  flex: 1;
+  min-width: 0;
+}
+
+.music-partner-auto-score-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.music-partner-auto-score-cell {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control);
+  padding: 8px 12px;
+  background: var(--surface-muted);
+}
+
+.music-partner-auto-score-label {
+  color: var(--text-tertiary);
+  font-size: 13px;
+  margin-bottom: 2px;
+}
+
+.music-partner-auto-score-value {
+  font-weight: 600;
+  color: var(--text);
+  font-size: 16px;
+}
+
+.music-partner-auto-score-cell.is-overall {
+  background: var(--action-bg);
+  border-color: var(--action);
+}
+
+.music-partner-auto-score-cell.is-overall .music-partner-auto-score-value {
+  color: var(--action);
+}
+
+.music-partner-auto-status-live {
+  margin-top: 12px;
+}
+
+.design-showcase {
+  max-width: 1080px;
 }
 
 @media (max-width: 960px) {

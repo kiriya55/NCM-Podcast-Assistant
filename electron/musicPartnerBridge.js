@@ -260,10 +260,13 @@ function createMusicPartnerBridgeScript({ nickname = '', userId = '' } = {}) {
             var navUrl = params.url;
             console.log('[BridgeMock] navigator.openURL:', navUrl);
             if (navUrl) {
-              if (navUrl.indexOf('mp.music.163.com') !== -1 || navUrl.indexOf('music.163.com') !== -1) {
-                window.location.href = navUrl;
-              } else {
-                try { require('electron').shell.openExternal(navUrl); } catch(e) {}
+              try {
+                var parsedNavUrl = new URL(navUrl, window.location.href);
+                var trustedHost = parsedNavUrl.hostname === 'music.163.com' || /\\.music\\.163\\.com$/.test(parsedNavUrl.hostname);
+                if (parsedNavUrl.protocol === 'https:' && trustedHost) window.location.href = parsedNavUrl.href;
+                else console.warn('[BridgeMock] blocked external navigation:', parsedNavUrl.protocol);
+              } catch (navErr) {
+                console.warn('[BridgeMock] blocked invalid navigation');
               }
             }
             result.context = {};

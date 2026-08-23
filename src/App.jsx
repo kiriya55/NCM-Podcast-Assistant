@@ -13,6 +13,7 @@ import EpisodeEditor from './components/Editor/EpisodeEditor'
 import APISettings from './components/Settings/APISettings'
 import VoiceManager from './components/Manage/VoiceManager'
 import MusicPartner from './components/MusicPartner'
+import DesignSystemShowcase from './components/DesignSystemShowcase'
 
 const { Sider, Content } = Layout
 
@@ -127,6 +128,10 @@ function AppContent() {
   ]
 
   const renderContent = () => {
+    // Development-only design showcase. Never linked from production navigation.
+    if (import.meta.env.DEV && typeof window !== 'undefined' && window.location.hash === '#design-system') {
+      return <DesignSystemShowcase />
+    }
     switch (activeMenu) {
       case 'login':
         return (

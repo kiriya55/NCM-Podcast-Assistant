@@ -58,6 +58,16 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.removeAllListeners('mp-progress')
   },
 
+  mpStartAutomation: (options) => ipcRenderer.invoke('mp-start-automation', options),
+  mpCancelAutomation: (reason) => ipcRenderer.invoke('mp-cancel-automation', reason),
+  mpAutomationStatus: () => ipcRenderer.invoke('mp-automation-status'),
+  onMpAutomationState: (callback) => {
+    ipcRenderer.on('mp-automation-state', (event, data) => callback(data))
+  },
+  removeMpAutomationStateListener: () => {
+    ipcRenderer.removeAllListeners('mp-automation-state')
+  },
+
   // 设置相关
   getSettings: () => ipcRenderer.invoke('get-settings'),
   saveSettings: (settings) => ipcRenderer.invoke('save-settings', settings),

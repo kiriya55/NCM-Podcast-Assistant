@@ -168,7 +168,7 @@ npm run build
 
 本项目仅供学习和研究用途。使用本工具时请遵守网易云音乐的服务条款。作者不对因使用本工具而产生的任何问题负责。
 
-# 致谢
+## 致谢
 
 本项目大量使用了[NCMApiEnhanced相关项目](https://github.com/NeteaseCloudMusicApiEnhanced/api-enhanced)提供的API作为参考，在此致谢。
 

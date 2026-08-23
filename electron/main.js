@@ -17,6 +17,12 @@ const SettingsStore = require('./services/settingsStore')
 const MusicPartnerService = require('./services/musicPartner')
 const { proxyMusicPartnerRequest } = require('./services/musicPartnerProxy')
 const { createMusicPartnerBridgeScript } = require('./musicPartnerBridge')
+const { createPageAdapter } = require('./musicPartner/pageAdapter')
+const { createMusicPartnerAutomation, DEFAULT_TIMING } = require('./musicPartner/automation')
+const { createRandomBalancedStrategy } = require('./musicPartner/scoreStrategy')
+const { createCheckpointStore } = require('./musicPartner/checkpointStore')
+const { isAllowedPartnerNavigation } = require('./musicPartner/navigationPolicy')
+const ElectronStore = require('electron-store')
 
 app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required')
 
@@ -28,6 +34,10 @@ let cookieStore = null
 let llmService = null
 let settingsStore = null
 let musicPartnerService = null
+let musicPartnerAutomation = null
+let musicPartnerCheckpointStore = null
+let mpCancelRequested = false
+let mpAutomationBusy = false
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -48,7 +58,7 @@ function createWindow() {
   const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged
   const distFile = path.join(__dirname, '..', 'dist', 'index.html')
   if (isDev) {
-    mainWindow.loadURL('http://localhost:5173').catch(() => {
+    mainWindow.loadURL('http://127.0.0.1:5173').catch(() => {
       mainWindow.loadFile(distFile).catch(() => {
         mainWindow.loadURL('data:text/html;charset=utf-8,' + encodeURIComponent(
           '<html><body style="font-family:sans-serif;display:flex;justify-content:center;align-items:center;height:100vh;background:#f5f5f5"><div style="text-align:center"><h2>开发服务器未启动</h2><p>请先运行 <code style="background:#eee;padding:4px 8px;border-radius:4px">npm run dev</code></p><p style="color:#999;font-size:13px">或先执行 <code style="background:#eee;padding:4px 8px;border-radius:4px">npm run build</code> 再运行 <code style="background:#eee;padding:4px 8px;border-radius:4px">electron .</code></p></div></body></html>'
@@ -84,6 +94,9 @@ function initServices() {
   podcastService = new PodcastService(cookieStore)
   llmService = new LLMService(settingsStore)
   musicPartnerService = new MusicPartnerService(cookieStore)
+  musicPartnerCheckpointStore = createCheckpointStore({
+    backend: new ElectronStore({ name: 'music-partner-automation' }),
+  })
 }
 
 function registerIpcHandlers() {
@@ -366,6 +379,92 @@ function registerIpcHandlers() {
     }
   })
 
+  ipcMain.handle('mp-start-automation', async (event, { strategy: strategyIndex } = {}) => {
+    if (mpAutomationBusy) {
+      return { success: false, code: 'already-running' }
+    }
+    if (musicPartnerAutomation) {
+      const status = musicPartnerAutomation.getStatus()
+      if (status.status !== 'idle' && status.status !== 'completed' && status.status !== 'paused') {
+        return { success: false, code: 'already-running' }
+      }
+    }
+
+    mpAutomationBusy = true
+    mpCancelRequested = false
+    const MAX_AUTO_RESTARTS = 2
+    let lastResult = null
+
+    try {
+    for (let attempt = 0; attempt <= MAX_AUTO_RESTARTS; attempt++) {
+      if (mpCancelRequested) return lastResult || { success: false, code: 'cancelled' }
+
+    // 确保窗口已打开
+    if (!musicPartnerWindow || musicPartnerWindow.isDestroyed()) {
+      await createMusicPartnerWindow()
+      // 等待页面加载
+      await new Promise(resolve => setTimeout(resolve, 2000))
+    }
+
+    const adapter = createPageAdapter({
+      getWebContents: () => musicPartnerWindow && !musicPartnerWindow.isDestroyed() ? musicPartnerWindow.webContents : null,
+      getUrl: () => musicPartnerWindow && !musicPartnerWindow.isDestroyed() ? musicPartnerWindow.webContents.getURL() : '',
+    })
+
+    const strategy = createRandomBalancedStrategy()
+
+    musicPartnerAutomation = createMusicPartnerAutomation({
+      adapter,
+      strategy,
+      timing: DEFAULT_TIMING,
+      emit: (state) => {
+        mainWindow?.webContents.send('mp-automation-state', state)
+      },
+      checkpointStore: musicPartnerCheckpointStore,
+    })
+
+    lastResult = await musicPartnerAutomation.start()
+    if (lastResult.success || mpCancelRequested || attempt >= MAX_AUTO_RESTARTS) {
+      return lastResult
+    }
+
+    console.log('[MusicPartner] 评分中断，自动重启窗口重试 (' + (attempt + 1) + '/' + MAX_AUTO_RESTARTS + '):', lastResult.reason)
+    mainWindow?.webContents.send('mp-automation-state', {
+      status: 'paused',
+      action: '页面异常，2 秒后自动关闭小窗重启重试（第 ' + (attempt + 1) + '/' + MAX_AUTO_RESTARTS + ' 次）',
+      error: lastResult.reason,
+      remainingMs: null,
+      score: null,
+    })
+    if (musicPartnerWindow && !musicPartnerWindow.isDestroyed()) {
+      musicPartnerWindow.destroy()
+      musicPartnerWindow = null
+    }
+    await new Promise(resolve => setTimeout(resolve, 2000))
+    }
+
+    return lastResult || { success: false, code: 'automation-failed' }
+    } finally {
+      mpAutomationBusy = false
+    }
+  })
+
+  ipcMain.handle('mp-cancel-automation', async (event, reason) => {
+    if (musicPartnerAutomation) {
+      mpCancelRequested = true
+      musicPartnerAutomation.cancel(reason || '用户取消')
+      return { success: true }
+    }
+    return { success: false, code: 'not-running' }
+  })
+
+  ipcMain.handle('mp-automation-status', async () => {
+    if (musicPartnerAutomation) {
+      return musicPartnerAutomation.getStatus()
+    }
+    return { status: 'idle', phase: null, current: 0, total: 0, action: '', remainingMs: null, score: null, error: null }
+  })
+
   const { weapi } = require('./services/crypto')
 
   ipcMain.handle('encrypt-weapi', async (_event, data) => {
@@ -524,6 +623,14 @@ async function createMusicPartnerWindow() {
   })
 
   const partnerSession = musicPartnerWindow.webContents.session
+
+  musicPartnerWindow.webContents.setWindowOpenHandler(() => ({ action: 'deny' }))
+  musicPartnerWindow.webContents.on('will-navigate', (event, targetUrl) => {
+    if (!isAllowedPartnerNavigation(targetUrl)) event.preventDefault()
+  })
+  musicPartnerWindow.webContents.on('will-redirect', (event, targetUrl) => {
+    if (!isAllowedPartnerNavigation(targetUrl)) event.preventDefault()
+  })
 
   partnerSession.webRequest.onBeforeRequest(
     { urls: ['http://*.music.126.net/*', 'http://*.music.163.com/*'] },
