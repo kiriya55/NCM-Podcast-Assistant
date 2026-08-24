@@ -6,7 +6,7 @@ process.on('warning', (warning) => {
   console.warn(warning)
 })
 
-const { app, BrowserWindow, ipcMain, dialog, session } = require('electron')
+const { app, BrowserWindow, ipcMain, dialog } = require('electron')
 
 const path = require('path')
 const AuthService = require('./services/auth')
@@ -16,28 +16,24 @@ const LLMService = require('./services/llm')
 const SettingsStore = require('./services/settingsStore')
 const MusicPartnerService = require('./services/musicPartner')
 const { proxyMusicPartnerRequest } = require('./services/musicPartnerProxy')
-const { createMusicPartnerBridgeScript } = require('./musicPartnerBridge')
-const { createPageAdapter } = require('./musicPartner/pageAdapter')
-const { createMusicPartnerAutomation, DEFAULT_TIMING } = require('./musicPartner/automation')
-const { createRandomBalancedStrategy } = require('./musicPartner/scoreStrategy')
 const { createCheckpointStore } = require('./musicPartner/checkpointStore')
-const { isAllowedPartnerNavigation } = require('./musicPartner/navigationPolicy')
+const { createMusicPartnerRunController } = require('./musicPartner/runController')
+const { createMusicPartnerWindow: createManagedMusicPartnerWindow } = require('./musicPartner/window')
 const ElectronStore = require('electron-store')
 
 app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required')
 
 let mainWindow = null
 let musicPartnerWindow = null
+let musicPartnerWindowHandle = null
 let authService = null
 let podcastService = null
 let cookieStore = null
 let llmService = null
 let settingsStore = null
 let musicPartnerService = null
-let musicPartnerAutomation = null
 let musicPartnerCheckpointStore = null
-let mpCancelRequested = false
-let mpAutomationBusy = false
+let musicPartnerRunController = null
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -96,6 +92,18 @@ function initServices() {
   musicPartnerService = new MusicPartnerService(cookieStore)
   musicPartnerCheckpointStore = createCheckpointStore({
     backend: new ElectronStore({ name: 'music-partner-automation' }),
+  })
+  musicPartnerRunController = createMusicPartnerRunController({
+    checkpointStore: musicPartnerCheckpointStore,
+    ensureWindow: () => ensureMusicPartnerWindow({ showOnReady: true }),
+    destroyWindow: async (handle) => {
+      await handle.cleanup()
+      if (musicPartnerWindowHandle === handle) {
+        musicPartnerWindowHandle = null
+        musicPartnerWindow = null
+      }
+    },
+    emit: (state) => mainWindow?.webContents.send('mp-automation-state', state),
   })
 }
 
@@ -361,7 +369,7 @@ function registerIpcHandlers() {
 
   ipcMain.handle('open-music-partner', async () => {
     try {
-      await createMusicPartnerWindow()
+      await ensureMusicPartnerWindow({ showOnReady: true })
       return { success: true }
     } catch (err) {
       console.error('[MusicPartner] 打开失败:', err)
@@ -371,7 +379,7 @@ function registerIpcHandlers() {
 
   ipcMain.handle('open-music-partner-window', async () => {
     try {
-      await createMusicPartnerWindow()
+      await ensureMusicPartnerWindow({ showOnReady: true })
       return { success: true }
     } catch (err) {
       console.error('[MusicPartner] open window failed:', err)
@@ -379,91 +387,13 @@ function registerIpcHandlers() {
     }
   })
 
-  ipcMain.handle('mp-start-automation', async (event, { strategy: strategyIndex } = {}) => {
-    if (mpAutomationBusy) {
-      return { success: false, code: 'already-running' }
-    }
-    if (musicPartnerAutomation) {
-      const status = musicPartnerAutomation.getStatus()
-      if (status.status !== 'idle' && status.status !== 'completed' && status.status !== 'paused') {
-        return { success: false, code: 'already-running' }
-      }
-    }
+  ipcMain.handle('mp-start-automation', async () => musicPartnerRunController.start())
 
-    mpAutomationBusy = true
-    mpCancelRequested = false
-    const MAX_AUTO_RESTARTS = 2
-    let lastResult = null
-
-    try {
-    for (let attempt = 0; attempt <= MAX_AUTO_RESTARTS; attempt++) {
-      if (mpCancelRequested) return lastResult || { success: false, code: 'cancelled' }
-
-    // 确保窗口已打开
-    if (!musicPartnerWindow || musicPartnerWindow.isDestroyed()) {
-      await createMusicPartnerWindow()
-      // 等待页面加载
-      await new Promise(resolve => setTimeout(resolve, 2000))
-    }
-
-    const adapter = createPageAdapter({
-      getWebContents: () => musicPartnerWindow && !musicPartnerWindow.isDestroyed() ? musicPartnerWindow.webContents : null,
-      getUrl: () => musicPartnerWindow && !musicPartnerWindow.isDestroyed() ? musicPartnerWindow.webContents.getURL() : '',
-    })
-
-    const strategy = createRandomBalancedStrategy()
-
-    musicPartnerAutomation = createMusicPartnerAutomation({
-      adapter,
-      strategy,
-      timing: DEFAULT_TIMING,
-      emit: (state) => {
-        mainWindow?.webContents.send('mp-automation-state', state)
-      },
-      checkpointStore: musicPartnerCheckpointStore,
-    })
-
-    lastResult = await musicPartnerAutomation.start()
-    if (lastResult.success || mpCancelRequested || attempt >= MAX_AUTO_RESTARTS) {
-      return lastResult
-    }
-
-    console.log('[MusicPartner] 评分中断，自动重启窗口重试 (' + (attempt + 1) + '/' + MAX_AUTO_RESTARTS + '):', lastResult.reason)
-    mainWindow?.webContents.send('mp-automation-state', {
-      status: 'paused',
-      action: '页面异常，2 秒后自动关闭小窗重启重试（第 ' + (attempt + 1) + '/' + MAX_AUTO_RESTARTS + ' 次）',
-      error: lastResult.reason,
-      remainingMs: null,
-      score: null,
-    })
-    if (musicPartnerWindow && !musicPartnerWindow.isDestroyed()) {
-      musicPartnerWindow.destroy()
-      musicPartnerWindow = null
-    }
-    await new Promise(resolve => setTimeout(resolve, 2000))
-    }
-
-    return lastResult || { success: false, code: 'automation-failed' }
-    } finally {
-      mpAutomationBusy = false
-    }
+  ipcMain.handle('mp-cancel-automation', async (_event, reason) => {
+    return musicPartnerRunController.cancel(reason || '用户取消')
   })
 
-  ipcMain.handle('mp-cancel-automation', async (event, reason) => {
-    if (musicPartnerAutomation) {
-      mpCancelRequested = true
-      musicPartnerAutomation.cancel(reason || '用户取消')
-      return { success: true }
-    }
-    return { success: false, code: 'not-running' }
-  })
-
-  ipcMain.handle('mp-automation-status', async () => {
-    if (musicPartnerAutomation) {
-      return musicPartnerAutomation.getStatus()
-    }
-    return { status: 'idle', phase: null, current: 0, total: 0, action: '', remainingMs: null, score: null, error: null }
-  })
+  ipcMain.handle('mp-automation-status', async () => musicPartnerRunController.getStatus())
 
   const { weapi } = require('./services/crypto')
 
@@ -508,242 +438,39 @@ function registerIpcHandlers() {
   })
 }
 
-const MUSIC_PARTNER_URL = 'https://mp.music.163.com/68429fb40fd3640105f60c9a/home/index.html?isH5=1&nm_style=sbt&bounces=false'
-const MUSIC_PARTNER_UA = 'Mozilla/5.0 (Linux; Android 12; V2309A Build/V417IR; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/110.0.5481.154 Safari/537.36 CloudMusic/0.1.2 NeteaseMusic/9.5.05'
-
-function writeMusicPartnerBridgePreload() {
-  const nickname = (cookieStore.getNickname() || '').replace(/'/g, "\\'").replace(/\\/g, '\\\\')
-  const userId = cookieStore.getUserId() || ''
-  const bridgePreloadPath = path.join(app.getPath('temp'), 'music-partner-bridge-preload.js')
-  const bridgeScript = createMusicPartnerBridgeScript({ nickname, userId })
-  require('fs').writeFileSync(bridgePreloadPath, bridgeScript, 'utf-8')
-  return { bridgePreloadPath, bridgeScript }
-}
-
-async function setupMusicPartnerSession(partnerSession) {
-  partnerSession.webRequest.onBeforeRequest(
-    { urls: ['http://*.music.126.net/*', 'http://*.music.163.com/*'] },
-    (details, callback) => {
-      callback({ redirectURL: details.url.replace('http://', 'https://') })
+async function ensureMusicPartnerWindow({ showOnReady = true } = {}) {
+  if (musicPartnerWindowHandle && !musicPartnerWindowHandle.browserWindow.isDestroyed()) {
+    if (showOnReady) {
+      musicPartnerWindowHandle.show()
+      musicPartnerWindowHandle.focus()
     }
-  )
-
-  partnerSession.webRequest.onBeforeSendHeaders(
-    { urls: ['https://*.music.163.com/*', 'https://*.127.net/*', 'https://*.music.126.net/*'] },
-    (details, callback) => {
-      details.requestHeaders['Referer'] = 'https://mp.music.163.com/'
-      details.requestHeaders['User-Agent'] = MUSIC_PARTNER_UA
-      callback({ requestHeaders: details.requestHeaders })
-    }
-  )
-
-  partnerSession.webRequest.onHeadersReceived(
-    { urls: ['https://*.music.163.com/*', 'https://*.127.net/*', 'https://*.music.126.net/*'] },
-    (details, callback) => {
-      delete details.responseHeaders['access-control-allow-origin']
-      delete details.responseHeaders['Access-Control-Allow-Origin']
-      delete details.responseHeaders['access-control-allow-credentials']
-      delete details.responseHeaders['Access-Control-Allow-Credentials']
-
-      details.responseHeaders['Access-Control-Allow-Origin'] = ['https://mp.music.163.com']
-      details.responseHeaders['Access-Control-Allow-Credentials'] = ['true']
-      details.responseHeaders['Access-Control-Allow-Methods'] = ['GET, POST, PUT, OPTIONS']
-      details.responseHeaders['Access-Control-Allow-Headers'] = ['*']
-      callback({ responseHeaders: details.responseHeaders })
-    }
-  )
-
-  const cookies = {
-    ...cookieStore.getCookies(),
-    os: 'android',
-    appver: '9.5.05',
-    channel: 'netease',
-    buildver: '260427110037',
-    versioncode: '9005005',
+    return musicPartnerWindowHandle
   }
 
-  for (const [name, value] of Object.entries(cookies).filter(([k, v]) => k && v)) {
-    await partnerSession.cookies.set({
-      url: 'https://music.163.com',
-      name,
-      value,
-      domain: '.music.163.com',
-      path: '/',
-      httpOnly: false,
-      secure: true,
-    }).catch((err) => console.error('[MusicPartner] Cookie set failed:', name, err.message))
-  }
-}
-
-async function prepareMusicPartnerEmbedConfig() {
-  const { bridgePreloadPath } = writeMusicPartnerBridgePreload()
-  const partition = 'persist:music-partner'
-  await setupMusicPartnerSession(session.fromPartition(partition))
-  return {
-    url: MUSIC_PARTNER_URL,
-    preloadPath: bridgePreloadPath,
-    partition,
-    userAgent: MUSIC_PARTNER_UA,
-  }
-}
-
-// 创建音乐合伙人 H5 窗口
-async function createMusicPartnerWindow() {
-  if (musicPartnerWindow && !musicPartnerWindow.isDestroyed()) {
-    musicPartnerWindow.focus()
-    return
+  if (musicPartnerWindowHandle) {
+    await musicPartnerWindowHandle.cleanup().catch(error => {
+      console.warn('[MusicPartner] stale window cleanup failed:', error.message)
+    })
   }
 
-  // === 第一步：先生成并写好 preload 文件，再创建 BrowserWindow ===
-  const nickname = (cookieStore.getNickname() || '').replace(/'/g, "\\'").replace(/\\/g, '\\\\')
-  const userId = cookieStore.getUserId() || ''
-  const bridgePreloadPath = path.join(app.getPath('temp'), 'music-partner-bridge-preload.js')
+  const handle = await createManagedMusicPartnerWindow({
+    app,
+    BrowserWindow,
+    cookieStore,
+    iconPath: path.join(__dirname, '..', 'build', 'icon.ico'),
+    partition: 'persist:music-partner',
+    showOnReady,
+  })
+  musicPartnerWindowHandle = handle
+  musicPartnerWindow = handle.browserWindow
 
-  // bridge 脚本以 preload 方式注入，contextIsolation=false 时 require(electron) 可用
-  const bridgeScript = createMusicPartnerBridgeScript({ nickname, userId })
-  require('fs').writeFileSync(bridgePreloadPath, bridgeScript, 'utf-8')
-  console.log('[MusicPartner] Bridge preload written:', bridgePreloadPath)
-
-  // === 第二步：创建窗口，此时 preload 文件已存在 ===
-  musicPartnerWindow = new BrowserWindow({
-    width: 400,
-    height: 750,
-    minWidth: 375,
-    minHeight: 667,
-    title: 'Music Partner',
-    icon: path.join(__dirname, '..', 'build', 'icon.ico'),
-    webPreferences: {
-      contextIsolation: false,
-      nodeIntegration: false,
-      sandbox: false,
-      webSecurity: false,
-      preload: bridgePreloadPath,
-    },
-    show: false,
+  handle.browserWindow.once('closed', () => {
+    handle.cleanup().catch(error => console.warn('[MusicPartner] window cleanup failed:', error.message))
+    if (musicPartnerWindowHandle === handle) musicPartnerWindowHandle = null
+    if (musicPartnerWindow === handle.browserWindow) musicPartnerWindow = null
   })
 
-  const partnerSession = musicPartnerWindow.webContents.session
-
-  musicPartnerWindow.webContents.setWindowOpenHandler(() => ({ action: 'deny' }))
-  musicPartnerWindow.webContents.on('will-navigate', (event, targetUrl) => {
-    if (!isAllowedPartnerNavigation(targetUrl)) event.preventDefault()
-  })
-  musicPartnerWindow.webContents.on('will-redirect', (event, targetUrl) => {
-    if (!isAllowedPartnerNavigation(targetUrl)) event.preventDefault()
-  })
-
-  partnerSession.webRequest.onBeforeRequest(
-    { urls: ['http://*.music.126.net/*', 'http://*.music.163.com/*'] },
-    (details, callback) => {
-      callback({ redirectURL: details.url.replace('http://', 'https://') })
-    }
-  )
-
-  // 设置 Referer 和 User-Agent 头部
-  partnerSession.webRequest.onBeforeSendHeaders(
-    { urls: ['https://*.music.163.com/*', 'https://*.127.net/*', 'https://*.music.126.net/*'] },
-    (details, callback) => {
-      details.requestHeaders['Referer'] = 'https://mp.music.163.com/'
-      details.requestHeaders['User-Agent'] = 'Mozilla/5.0 (Linux; Android 12; V2309A Build/V417IR; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/110.0.5481.154 Safari/537.36 CloudMusic/0.1.2 NeteaseMusic/9.5.05'
-      callback({ requestHeaders: details.requestHeaders })
-    }
-  )
-
-  // Inject CORS response headers for music.163.com resources.
-  partnerSession.webRequest.onHeadersReceived(
-    { urls: ['https://*.music.163.com/*', 'https://*.127.net/*', 'https://*.music.126.net/*'] },
-    (details, callback) => {
-      delete details.responseHeaders['access-control-allow-origin']
-      delete details.responseHeaders['Access-Control-Allow-Origin']
-      delete details.responseHeaders['access-control-allow-credentials']
-      delete details.responseHeaders['Access-Control-Allow-Credentials']
-
-      details.responseHeaders['Access-Control-Allow-Origin'] = ['https://mp.music.163.com']
-      details.responseHeaders['Access-Control-Allow-Credentials'] = ['true']
-      details.responseHeaders['Access-Control-Allow-Methods'] = ['GET, POST, PUT, OPTIONS']
-      details.responseHeaders['Access-Control-Allow-Headers'] = ['*']
-      callback({ responseHeaders: details.responseHeaders })
-    }
-  )
-
-  // === 第三步：注入 Cookie 实现登录态共享 ===
-  try {
-    const cookies = {
-      ...cookieStore.getCookies(),
-      os: 'android',
-      appver: '9.5.05',
-      channel: 'netease',
-      buildver: '260427110037',
-      versioncode: '9005005',
-    }
-    const cookieEntries = Object.entries(cookies).filter(([k, v]) => k && v)
-
-    console.log('[MusicPartner] CookieStore keys:', cookieEntries.map(([k]) => k).join(', '))
-    console.log('[MusicPartner] MUSIC_U:', cookies['MUSIC_U'] ? 'exists' : 'MISSING')
-    console.log('[MusicPartner] __csrf:', cookies['__csrf'] ? 'exists' : 'MISSING')
-
-    for (const [name, value] of cookieEntries) {
-      await partnerSession.cookies.set({
-        url: 'https://music.163.com',
-        name,
-        value,
-        domain: '.music.163.com',
-        path: '/',
-        httpOnly: false,
-        secure: true,
-      }).catch((err) => console.error('[MusicPartner] Cookie set failed:', name, err.message))
-    }
-
-    console.log('[MusicPartner] Cookie injection completed, count:', cookieEntries.length)
-  } catch (err) {
-    console.error('[MusicPartner] Cookie 注入失败:', err)
-  }
-
-  // 监听渲染进程日志（打印所有日志便于诊断，过滤掉噪音级别）
-  musicPartnerWindow.webContents.on('console-message', (_e, level, msg) => {
-    // level: 0=verbose, 1=info, 2=warning, 3=error
-    if (level >= 2) {
-      // warning/error 全部打印
-      console.log('[Renderer:' + (level === 3 ? 'ERR' : 'WRN') + ']', msg.substring(0, 500))
-    } else if (msg.indexOf('[BridgeMock]') !== -1 || msg.indexOf('MNB') !== -1) {
-      console.log('[Renderer]', msg.substring(0, 500))
-    } else if (msg.indexOf('partner') !== -1 || msg.indexOf('Partner') !== -1) {
-      console.log('[Renderer:partner]', msg.substring(0, 500))
-    }
-  })
-
-  const injectBridge = (label) => {
-    if (!musicPartnerWindow || musicPartnerWindow.isDestroyed()) return
-    musicPartnerWindow.webContents.executeJavaScript(bridgeScript)
-      .then(() => console.log('[MusicPartner] bridge injected:', label))
-      .catch((e) => { console.log('[MusicPartner] bridge inject failed:', label, e.message) })
-  }
-
-  musicPartnerWindow.webContents.on('did-navigate', () => injectBridge('did-navigate'))
-  musicPartnerWindow.webContents.on('did-navigate-in-page', () => injectBridge('did-navigate-in-page'))
-  musicPartnerWindow.webContents.on('did-finish-load', () => injectBridge('did-finish-load'))
-
-  // dom-ready 兜底：preload 是最佳注入时机；如果 dom-ready 时 flag 缺失则补注入
-  musicPartnerWindow.webContents.on('dom-ready', () => {
-    const currentUrl = musicPartnerWindow.webContents.getURL()
-    console.log('[MusicPartner] dom-ready, URL:', currentUrl.substring(0, 100))
-    injectBridge('dom-ready')
-    // Bridge diagnostics are disabled in normal builds.
-
-  })
-
-  // Load the music partner H5 page with an Android NetEase Music UA.
-  musicPartnerWindow.loadURL('https://mp.music.163.com/68429fb40fd3640105f60c9a/home/index.html?isH5=1&nm_style=sbt&bounces=false', {
-    userAgent: 'Mozilla/5.0 (Linux; Android 12; V2309A Build/V417IR; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/110.0.5481.154 Safari/537.36 CloudMusic/0.1.2 NeteaseMusic/9.5.05',
-  })
-
-  musicPartnerWindow.on('ready-to-show', () => {
-    musicPartnerWindow.show()
-  })
-
-  musicPartnerWindow.on('closed', () => {
-    musicPartnerWindow = null
-  })
+  return handle
 }
 
 app.whenReady().then(() => {
