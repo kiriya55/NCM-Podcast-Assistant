@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>评定中</title>
+</head>
+<body>
+  <div class="page rating-page" data-page="rating" data-song-id="song-001" data-song-index="0" data-phase="daily">
+    <header class="nav-bar">
+      <span class="title">基础任务</span>
+      <span class="counter">1 / 5</span>
+    </header>
+    <main class="rating-content">
+      <section class="song-info">
+        <div class="song-name">示例歌曲 A</div>
+        <div class="song-author">示例歌手</div>
+        <audio id="page-audio" src="https://m801.music.126.net/exampleA.mp3" data-bridge-mock="false"></audio>
+        <div class="player">
+          <button class="play-button" type="button" data-action="play">播放</button>
+          <div class="player-progress">
+            <span class="player-current-time" data-marker="current-time">0</span>
+            <span class="player-duration" data-marker="duration">180</span>
+            <div class="player-state" data-marker="play-state" data-state="paused">paused</div>
+          </div>
+        </div>
+      </section>
+      <section class="rating-board">
+        <div class="rating-row overall-row" data-rating="overall">
+          <div class="rating-label">总评</div>
+          <div class="rating-stars" data-stars="5" data-rating-row="overall">
+            <span class="star" data-score="1" data-state="idle">★</span>
+            <span class="star" data-score="2" data-state="idle">★</span>
+            <span class="star" data-score="3" data-state="idle">★</span>
+            <span class="star" data-score="4" data-state="idle">★</span>
+            <span class="star" data-score="5" data-state="idle">★</span>
+          </div>
+          <div class="rating-selected" data-marker="selected-score" data-value="">未选择</div>
+        </div>
+        <div class="rating-row part-row" data-rating="part" data-part-name="旋律">
+          <div class="rating-label">旋律</div>
+          <div class="rating-stars" data-stars="5" data-rating-row="旋律">
+            <span class="star" data-score="1" data-state="idle">★</span>
+            <span class="star" data-score="2" data-state="idle">★</span>
+            <span class="star" data-score="3" data-state="idle">★</span>
+            <span class="star" data-score="4" data-state="idle">★</span>
+            <span class="star" data-score="5" data-state="idle">★</span>
+          </div>
+          <div class="rating-selected" data-marker="selected-score" data-value="">未选择</div>
+        </div>
+        <div class="rating-row part-row" data-rating="part" data-part-name="演唱">
+          <div class="rating-label">演唱</div>
+          <div class="rating-stars" data-stars="5" data-rating-row="演唱">
+            <span class="star" data-score="1" data-state="idle">★</span>
+            <span class="star" data-score="2" data-state="idle">★</span>
+            <span class="star" data-score="3" data-state="idle">★</span>
+            <span class="star" data-score="4" data-state="idle">★</span>
+            <span class="star" data-score="5" data-state="idle">★</span>
+          </div>
+          <div class="rating-selected" data-marker="selected-score" data-value="">未选择</div>
+        </div>
+      </section>
+      <button class="primary-action submit-button" type="button" data-action="submit">提交并进入下首歌曲</button>
+    </main>
+  </div>
+</body>
+</html>

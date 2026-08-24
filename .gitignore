@@ -33,7 +33,6 @@ Thumbs.db
 .agents/
 .codegraph/
 .superpowers/
-docs/superpowers/
 
 # Local Git worktrees
 .worktrees/
@@ -44,9 +43,3 @@ docs/superpowers/
 # Temporary files
 *.tmp
 *.temp
-
-# Tests
-test/
-
-# Docs
-DESIGN.md
