@@ -3,6 +3,7 @@
 const { createAuthCommands } = require('./commands/auth')
 const { createLlmCommands } = require('./commands/llm')
 const { createMediaCommands } = require('./commands/media')
+const { createMusicPartnerCommands } = require('./commands/musicPartner')
 const { createPodcastCommands } = require('./commands/podcast')
 const { createSettingsCommands } = require('./commands/settings')
 const { CliError } = require('./errors')
@@ -28,6 +29,8 @@ const COMMAND_SPECS = Object.freeze([
   ['cover set-episode', '为单集设置已上传的封面', ['episodeId', 'coverId', 'podcastId']],
   ['cover set-podcast', '为播客设置已上传的封面', ['podcastId', 'coverId']],
   ['llm parse', '使用已配置的 LLM 解析歌曲信息', ['input']],
+  ['music-partner verify', '验证音乐合伙人登录状态', []],
+  ['music-partner run', '在临时 Electron 窗口中音乐合伙人流程', []],
   ['settings get', '读取非敏感设置', []],
   ['settings set', '更新设置', ['input']],
 ])
@@ -42,6 +45,10 @@ function createRegistry({ services, commandDependencies = {} }) {
     ...createPodcastCommands({ podcastService: services.podcastService }),
     ...createMediaCommands({ podcastService: services.podcastService, ...commandDependencies.media }),
     ...createLlmCommands({ llmService: services.llmService }),
+    ...createMusicPartnerCommands({
+      musicPartnerService: services.musicPartnerService,
+      ...commandDependencies.musicPartner,
+    }),
     ...createSettingsCommands({ settingsStore: services.settingsStore, llmService: services.llmService }),
   }
 

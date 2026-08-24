@@ -35,6 +35,8 @@ test('registry exposes every ordinary CLI command with SMS naming', () => {
     'episode list',
     'episode update',
     'llm parse',
+    'music-partner run',
+    'music-partner verify',
     'podcast list',
     'settings get',
     'settings set',
