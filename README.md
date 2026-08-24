@@ -38,6 +38,18 @@ cd NCM-Podcast-Assistant
 npm install
 ```
 
+## 命令行与 AI 操作
+
+项目同时提供与 GUI 共享登录和设置的 `ncm-podcast` CLI，支持人工输出、JSON、JSON Lines 和 JSON stdin：
+
+```bash
+node bin/ncm-podcast.js --help
+node bin/ncm-podcast.js --json auth status
+node bin/ncm-podcast.js --json podcast list
+```
+
+手机验证码命令为 `auth sms send` / `auth sms verify`。音乐合伙人功能会按需启动默认隐藏的临时 Electron 窗口，仅在需要人工处理时显示，并在结束后自动关闭。完整命令、AI 调用约定、解锁环境变量和跨平台示例见 [CLI 与 AI 操作指南](docs/CLI.md)。
+
 ### 开发模式
 
 ```bash

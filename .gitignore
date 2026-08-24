@@ -2,8 +2,14 @@ node_modules/
 dist/
 release/
 *.log
+
+# Local environment and secret files
 .env
-.env.local
+.env.*
+!.env.example
+
+# Optional repository-local CLI data directory (contains cookies/settings)
+.ncm-podcast-data/
 
 # IDE
 .vscode/
@@ -21,6 +27,14 @@ Thumbs.db
 *.exe
 *.nsis
 *.blockmap
+*.dmp
+
+# Test and coverage output
+coverage/
+.nyc_output/
+playwright-report/
+test-results/
+blob-report/
 
 # Claude Code
 .claude/
@@ -43,3 +57,5 @@ Thumbs.db
 # Temporary files
 *.tmp
 *.temp
+*.pid
+music-partner-bridge-preload-*.js
