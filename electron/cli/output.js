@@ -79,6 +79,9 @@ function createOutput({
 
     if (mode === 'jsonl') {
       writeLine(stdout, JSON.stringify({ event: name, data: safeData, meta }))
+    } else if (mode === 'human' && name === 'start' && safeData?.qrTerminal) {
+      writeLine(stdout, `QR URL: ${safeData.qrUrl}`)
+      stdout.write(safeData.qrTerminal.endsWith('\n') ? safeData.qrTerminal : `${safeData.qrTerminal}\n`)
     } else if (mode === 'human') {
       writeLine(stdout, `[${name}] ${typeof safeData === 'string' ? safeData : JSON.stringify(safeData)}`)
     } else {

@@ -74,3 +74,12 @@ test('redact masks known secret fields but leaves ordinary code and model fields
     { code: 'REMOTE_ERROR', smsCode: '[REDACTED]', openaiModel: 'gpt-4o' }
   )
 })
+
+test('human QR start event renders an interactive terminal QR instead of escaped JSON', () => {
+  const stdout = capture()
+  const output = createOutput({ mode: 'human', stdout, stderr: capture(), command: 'auth login-qr' })
+
+  output.event('start', { qrUrl: 'https://music.163.com/login?codekey=key-1', qrTerminal: 'QR-BLOCK\n' })
+
+  assert.equal(stdout.text(), 'QR URL: https://music.163.com/login?codekey=key-1\nQR-BLOCK\n')
+})
