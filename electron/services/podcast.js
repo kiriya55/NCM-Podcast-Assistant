@@ -7,8 +7,8 @@ const { extractAudioMetadata } = require('./audioMetadata')
 const { BASE_URL, UA, NeteaseService } = require('./neteaseService')
 
 class PodcastService extends NeteaseService {
-  constructor(cookieStore) {
-    super(cookieStore)
+  constructor(cookieStore, options) {
+    super(cookieStore, options)
   }
 
   async getPodcastList() {

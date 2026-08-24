@@ -20,8 +20,8 @@ const schema = {
 }
 
 class SettingsStore {
-  constructor() {
-    this.store = new Store({ name: 'settings', schema })
+  constructor({ cwd } = {}) {
+    this.store = new Store({ name: 'settings', schema, ...(cwd ? { cwd } : {}) })
     this._keys = Object.keys(schema)
   }
 

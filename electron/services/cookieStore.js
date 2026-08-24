@@ -8,8 +8,8 @@ const schema = {
 }
 
 class CookieStore {
-  constructor() {
-    this.store = new Store({ name: 'cookies', schema })
+  constructor({ cwd } = {}) {
+    this.store = new Store({ name: 'cookies', schema, ...(cwd ? { cwd } : {}) })
   }
 
   getCookies() {

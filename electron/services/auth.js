@@ -3,8 +3,8 @@ const QRCode = require('qrcode')
 const { BASE_URL, UA, NeteaseService } = require('./neteaseService')
 
 class AuthService extends NeteaseService {
-  constructor(cookieStore) {
-    super(cookieStore)
+  constructor(cookieStore, options) {
+    super(cookieStore, options)
   }
 
   // 初始化会话：先访问网易云首页获取初始 cookie（模拟真实浏览器行为）

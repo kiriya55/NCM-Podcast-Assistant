@@ -6,10 +6,10 @@ const BASE_URL = 'https://music.163.com'
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
 
 class NeteaseService {
-  constructor(cookieStore) {
+  constructor(cookieStore, { session: electronSession } = {}) {
     this.cookieStore = cookieStore
     this.cookies = cookieStore.getCookies() || {}
-    this._session = session.defaultSession
+    this._session = electronSession === undefined ? session?.defaultSession || null : electronSession
   }
 
   getCookies() {
@@ -37,6 +37,8 @@ class NeteaseService {
   }
 
   async _syncCookiesToSession() {
+    if (!this._session?.cookies) return
+
     try {
       for (const [name, value] of Object.entries(this.cookies)) {
         await this._session.cookies.set({
