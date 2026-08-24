@@ -1,6 +1,6 @@
 'use strict'
 
-const SECRET_KEY = /^(cookie|stringCookie|musicU|csrf|token|apiKey|openaiApiKey|password|captcha|smsCode|authorization)$/i
+const SECRET_KEY = /^(cookie|stringCookie|musicU|csrf|token|apiKey|openaiApiKey|password|captcha|smsCode|authorization(?:Marker)?|ncm[_-]?mp[_-]?run[_-]?auth)$/i
 
 function redact(value, secrets = []) {
   if (Array.isArray(value)) return value.map(item => redact(item, secrets))

@@ -51,6 +51,53 @@ test('auth sms verify reads the phone and code from structured input', async () 
   assert.deepEqual(calls, [['13800138000', '4321']])
 })
 
+test('auth sms uses explicit flags before JSON and environment values', async () => {
+  const calls = []
+  const commands = createAuthCommands({
+    authService: {
+      sendCaptcha: async phone => { calls.push(['send', phone]); return { success: true } },
+      verifyCaptcha: async (phone, code) => { calls.push(['verify', phone, code]); return { success: true } },
+    },
+    cookieStore: {},
+  })
+
+  await commands['auth sms send']({
+    options: { phone: '13800138001' },
+    input: { phone: '13800138002' },
+    env: { NCM_PHONE: '13800138003' },
+  })
+  await commands['auth sms verify']({
+    options: { phone: '13800138001' },
+    input: { phone: '13800138002', code: '1111' },
+    env: { NCM_PHONE: '13800138003', NCM_SMS_CODE: '2222' },
+  })
+
+  assert.deepEqual(calls, [
+    ['send', '13800138001'],
+    ['verify', '13800138001', '1111'],
+  ])
+})
+
+test('auth sms reads phone and code from environment variables', async () => {
+  const calls = []
+  const commands = createAuthCommands({
+    authService: {
+      sendCaptcha: async phone => { calls.push(['send', phone]); return { success: true } },
+      verifyCaptcha: async (phone, code) => { calls.push(['verify', phone, code]); return { success: true } },
+    },
+    cookieStore: {},
+  })
+  const env = { NCM_PHONE: '13800138000', NCM_SMS_CODE: '4321' }
+
+  await commands['auth sms send']({ options: {}, input: {}, env })
+  await commands['auth sms verify']({ options: {}, input: {}, env })
+
+  assert.deepEqual(calls, [
+    ['send', '13800138000'],
+    ['verify', '13800138000', '4321'],
+  ])
+})
+
 test('auth status and whoami expose login state without returning cookies', async () => {
   const commands = createAuthCommands({
     authService: { getUserInfo: async () => ({ userId: '7', nickname: 'Roy', avatarUrl: 'https://example/avatar' }) },

@@ -75,6 +75,33 @@ test('redact masks known secret fields but leaves ordinary code and model fields
   )
 })
 
+test('JSON success redacts a one-run Music Partner authorization marker by key', () => {
+  const stdout = capture()
+  const output = createOutput({ mode: 'json', stdout, stderr: capture(), command: 'music-partner run' })
+
+  output.success({ nested: { NCM_MP_RUN_AUTH: 'one-run-marker' } })
+
+  assert.equal(JSON.parse(stdout.text()).data.nested.NCM_MP_RUN_AUTH, '[REDACTED]')
+})
+
+test('JSON failure redacts a named authorization marker in error details', () => {
+  const stdout = capture()
+  const output = createOutput({ mode: 'json', stdout, stderr: capture(), command: 'music-partner run' })
+
+  output.failure(new CliError('REMOTE_ERROR', 'failed', { authorizationMarker: 'one-run-marker' }))
+
+  assert.equal(JSON.parse(stdout.text()).error.details.authorizationMarker, '[REDACTED]')
+})
+
+test('diagnostics redact a one-run Music Partner authorization marker by key', () => {
+  const stderr = capture()
+  const output = createOutput({ mode: 'json', stdout: capture(), stderr, command: 'music-partner run' })
+
+  output.diagnostic({ ncmMpRunAuth: 'one-run-marker' })
+
+  assert.equal(stderr.text(), '{"ncmMpRunAuth":"[REDACTED]"}\n')
+})
+
 test('human QR start event renders an interactive terminal QR instead of escaped JSON', () => {
   const stdout = capture()
   const output = createOutput({ mode: 'human', stdout, stderr: capture(), command: 'auth login-qr' })

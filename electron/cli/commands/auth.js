@@ -10,8 +10,8 @@ function defaultSleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms))
 }
 
-function requirePhone(options, input) {
-  const phone = input.phone ?? options.phone
+function requirePhone(options, input, env) {
+  const phone = options.phone ?? input.phone ?? env.NCM_PHONE
   if (typeof phone !== 'string' || !PHONE_PATTERN.test(phone)) {
     throw new CliError('INVALID_INPUT', 'Phone number must contain 6 to 20 digits')
   }
@@ -37,13 +37,13 @@ function createAuthCommands({
       return authService.getUserInfo()
     },
 
-    'auth sms send': async ({ options = {}, input = {} }) => {
-      return authService.sendCaptcha(requirePhone(options, input))
+    'auth sms send': async ({ options = {}, input = {}, env = process.env }) => {
+      return authService.sendCaptcha(requirePhone(options, input, env))
     },
 
-    'auth sms verify': async ({ options = {}, input = {} }) => {
-      const phone = requirePhone(options, input)
-      const code = input.code ?? input.smsCode
+    'auth sms verify': async ({ options = {}, input = {}, env = process.env }) => {
+      const phone = requirePhone(options, input, env)
+      const code = input.code ?? input.smsCode ?? env.NCM_SMS_CODE
       if (typeof code !== 'string' || !code.trim()) {
         throw new CliError('INVALID_INPUT', 'SMS code must be a non-empty string')
       }

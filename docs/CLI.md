@@ -140,6 +140,18 @@ printf '%s\n' '{"phone":"13800138000","code":"1234"}' |
 
 验证码不要作为专用命令参数传入；这样可以避免它出现在进程参数列表中。
 
+也可以临时使用环境变量 `NCM_PHONE` 和 `NCM_SMS_CODE`。显式 `--phone` 的优先级高于 JSON `phone`，JSON 又高于 `NCM_PHONE`；短信码优先读取 JSON `code`/`smsCode`，最后才读取 `NCM_SMS_CODE`。例如 PowerShell：
+
+```powershell
+$env:NCM_PHONE = '13800138000'
+$env:NCM_SMS_CODE = Read-Host -MaskInput 'SMS code'
+node .\bin\ncm-podcast.js --json auth sms verify
+Remove-Item Env:NCM_SMS_CODE
+Remove-Item Env:NCM_PHONE
+```
+
+环境中的短信码同样会加入 stdout/stderr 的值级脱敏列表。
+
 ### 二维码登录
 
 人工模式会直接在终端绘制二维码：

@@ -20,7 +20,7 @@ function normalizeError(error, signal) {
 }
 
 function addSecrets(target, services, input, env) {
-  for (const name of ['NCM_MP_PASSWORD', 'VITE_MP_PASSWORD', 'OPENAI_API_KEY']) {
+  for (const name of ['NCM_MP_PASSWORD', 'VITE_MP_PASSWORD', 'NCM_SMS_CODE', 'OPENAI_API_KEY']) {
     if (env[name]) target.push(String(env[name]))
   }
 

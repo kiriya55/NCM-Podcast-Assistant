@@ -87,6 +87,25 @@ test('runCli reads structured stdin and redacts its API key from stdout and diag
   assert.match(streams.stderr.text(), /\[REDACTED\]/)
 })
 
+test('runCli redacts an SMS code supplied through the environment', async () => {
+  const streams = io({ env: { NCM_PHONE: '13800138000', NCM_SMS_CODE: '4321' } })
+  const exitCode = await runCli(['--json', 'auth', 'sms', 'verify'], streams, {
+    services: fakeServices({
+      authService: {
+        verifyCaptcha: async (_phone, code) => {
+          console.log(`verified ${code}`)
+          return { success: true, diagnosticCode: code }
+        },
+      },
+    }),
+  })
+
+  assert.equal(exitCode, 0)
+  assert.doesNotMatch(streams.stdout.text(), /4321/)
+  assert.doesNotMatch(streams.stderr.text(), /4321/)
+  assert.match(streams.stderr.text(), /\[REDACTED\]/)
+})
+
 test('runCli renders prefix help without invoking a service', async () => {
   const streams = io()
   const exitCode = await runCli(['auth', 'sms', '--help'], streams, { services: fakeServices() })
