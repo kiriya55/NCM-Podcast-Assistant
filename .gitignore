@@ -47,6 +47,7 @@ blob-report/
 .agents/
 .codegraph/
 .superpowers/
+/docs/superpowers/
 
 # Local Git worktrees
 .worktrees/
