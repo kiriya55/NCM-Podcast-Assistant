@@ -2,13 +2,17 @@
 <img src="https://github.com/kiriya55/NCM-Podcast-Assistant/blob/main/build/icon.png" alt="NCM-Podcast-Assistant Icon" width="128">
   <h1 align="center">网易云播客投稿助手</h1>
   <p align="center">
-    通过GUI管理网易云播客&电脑完成音乐合伙人任务！
+    通过 GUI 管理网易云播客，并在电脑端完成音乐合伙人任务！
     <br />
   </p>
 </p>
 <a href='LICENSE'><img src="https://img.shields.io/badge/license-MIT-yellow.svg" alt="MIT License"></a>
 
 基于 Electron + React 的桌面端工具，用于向网易云音乐播客批量上传和管理音频单集。
+
+当前版本：`1.1.0`
+
+发布说明见 [CHANGELOG.md](CHANGELOG.md)。
 
 ## 功能特性
 
@@ -18,7 +22,7 @@
 - **AI 智能填写** — 集成 OpenAI 兼容 API，从自然语言描述提取结构化歌曲信息
 - **封面管理** — 从音频提取封面、设置统一封面、单独修改封面
 - **播客管理** — 编辑单集信息、删除单集、设置隐私
-- **音乐合伙人** — H5 页面电脑端实现（仅含歌曲评定）
+- **神秘功能（音乐合伙人）** — H5 页面电脑端实现（仅含歌曲评定）
 
 ## 环境要求
 
@@ -48,7 +52,7 @@ node bin/ncm-podcast.js --json auth status
 node bin/ncm-podcast.js --json podcast list
 ```
 
-手机验证码命令为 `auth sms send` / `auth sms verify`。音乐合伙人功能会按需启动默认隐藏的临时 Electron 窗口，仅在需要人工处理时显示，并在结束后自动关闭。完整命令、AI 调用约定、解锁环境变量和跨平台示例见 [CLI 与 AI 操作指南](docs/CLI.md)。
+手机验证码命令为 `auth sms send` / `auth sms verify`。神秘功能会按需启动默认隐藏的临时 Electron 窗口，仅在需要人工处理时显示，并在结束后自动关闭。完整命令、AI 调用约定、解锁环境变量和跨平台示例见 [CLI 与 AI 操作指南](docs/CLI.md)。
 
 ### 开发模式
 
@@ -107,11 +111,11 @@ npm run build
 - 设置单集公开/隐私状态
 - 删除单集（支持批量删除）
 
-### 5. 音乐合伙人
+### 5. 神秘功能（音乐合伙人）
 
 左侧菜单选择「音乐合伙人」：
 
-- **可在电脑端模拟小窗口设备打开H5 页面** — 跨平台完成每日歌曲评定、撰写乐评和点击喜欢（目前版本为避免风险操作，禁用了歌曲推荐的相关功能）
+- **可在电脑端模拟小窗口设备打开 H5 页面** — 跨平台完成每日歌曲评定、撰写乐评和点击喜欢（目前版本为避免风险操作，禁用了歌曲推荐的相关功能）
 
 ### 6. 设置
 

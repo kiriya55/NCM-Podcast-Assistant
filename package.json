@@ -1,6 +1,6 @@
 {
   "name": "NCM-Podcast-Assistant",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "NCM-Podcast-Assistant — 网易云播客投稿助手，批量上传、AI 智能填写、封面管理",
   "main": "electron/main.js",
   "bin": {

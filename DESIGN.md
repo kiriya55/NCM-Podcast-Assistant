@@ -1,6 +1,6 @@
 # NCM Podcast Assistant Design System
 
-> Operational desktop console for NCM podcast contributors and Music Partner automation. Extracted from the existing Ant Design + React layout before the auto-rating feature was added.
+> Operational desktop console for NCM podcast contributors and the Music Partner workflow. Extracted from the existing Ant Design + React layout before the workflow feature was added.
 
 ## 1. Direction
 
